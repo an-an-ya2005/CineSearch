@@ -1,6 +1,8 @@
 # Movie Recommendation System
 
 This project is a movie recommendation system built with Streamlit and powered by a machine learning model. It recommends movies based on a selected title using cosine similarity and displays movie posters fetched from the TMDB API.
+>YouTube tutorial [HERE](https://youtu.be/i-B_I2DGIAI)
+
 >Dataset is [HERE](https://www.kaggle.com/datasets/tmdb/tmdb-movie-metadata)
 
 >Some files are not available on GitHub due to the large file size. you can get it [HERE](https://huggingface.co/sujoy0011/Movie-Recommendation-System/tree/main)
