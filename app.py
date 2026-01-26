@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import requests
-import pickle
 
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(
@@ -10,22 +10,19 @@ st.set_page_config(
     layout="wide"
 )
 
-# ---------------- UI CSS (SAFE & FIXED) ----------------
+# ---------------- UI CSS ----------------
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
 
-/* Base font */
 html, body {
     font-family: 'Poppins', sans-serif;
 }
 
-/* App background */
 .stApp {
     background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
 }
 
-/* Headings */
 h1 {
     font-size: 3rem;
     color: #f5c518;
@@ -39,7 +36,6 @@ h3 {
     margin-top: 5px;
 }
 
-/* Movie cards */
 .movie-card {
     background: rgba(255, 255, 255, 0.08);
     border-radius: 15px;
@@ -64,7 +60,6 @@ h3 {
     color: white;
 }
 
-/* Buttons */
 .stButton > button {
     background: linear-gradient(90deg, #f5c518, #ff9900);
     color: black;
@@ -72,66 +67,22 @@ h3 {
     border-radius: 30px;
     padding: 12px 25px;
     border: none;
-    transition: all 0.3s ease;
 }
 
-.stButton > button:hover {
-    transform: scale(1.05);
-    background: linear-gradient(90deg, #ff9900, #f5c518);
-}
-
-/* Selectbox label */
 label {
     color: white !important;
-    font-weight: 600;
 }
-
-/* Selected value text */
-div[data-baseweb="select"] > div {
-    color: black !important;
-}
-
-/* Dropdown options */
-div[data-baseweb="popover"] {
-    color: black !important;
-}
-
-/* Chat messages */
-div[data-testid="stChatMessage"] {
-    background-color: white !important;
-    border-radius: 10px;
-    padding: 10px;
-    margin-bottom: 8px;
-}
-
-div[data-testid="stChatMessage"] p {
-    color: black !important;
-}
-
-/* Chat input */
-div[data-testid="stChatInput"] textarea {
-    color: black !important;
-    background-color: white !important;
-}
-
-div[data-testid="stChatInput"] textarea::placeholder {
-    color: #555 !important;
-}
-
-div[data-testid="stChatInput"] label {
-    color: black !important;
-}
-
-/* Hide Streamlit branding */
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
-header {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------- LOAD DATA ----------------
-with open("movie_data.pkl", "rb") as file:
-    movies, cosine_sim = pickle.load(file)
+# ---------------- LOAD DATA (DEPLOYMENT SAFE) ----------------
+@st.cache_data
+def load_data():
+    movies = pd.read_csv("movies.csv")
+    cosine_sim = np.load("cosine_sim.npy")
+    return movies, cosine_sim
+
+movies, cosine_sim = load_data()
 
 # ---------------- RECOMMENDATION FUNCTION ----------------
 def get_recommendations(title):
@@ -139,14 +90,16 @@ def get_recommendations(title):
     sim_scores = list(enumerate(cosine_sim[idx]))
     sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)[1:11]
     movie_indices = [i[0] for i in sim_scores]
-    return movies[["title", "movie_id"]].iloc[movie_indices]
+    return movies.iloc[movie_indices]
 
 # ---------------- POSTER FETCH ----------------
 def fetch_poster(movie_id):
-    api_key = "7b995d3c6fd91a2284b4ad8cb390c7b8"  # TMDB API key
+    api_key = "7b995d3c6fd91a2284b4ad8cb390c7b8"
     url = f"https://api.themoviedb.org/3/movie/{movie_id}?api_key={api_key}"
     data = requests.get(url).json()
-    return "https://image.tmdb.org/t/p/w500" + data["poster_path"]
+    if data.get("poster_path"):
+        return "https://image.tmdb.org/t/p/w500" + data["poster_path"]
+    return ""
 
 # ---------------- HEADER ----------------
 st.markdown("<h1>🎬 CineSearch</h1>", unsafe_allow_html=True)
