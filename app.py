@@ -75,7 +75,7 @@ label {
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------- LOAD DATA (DEPLOYMENT SAFE) ----------------
+# ---------------- LOAD DATA ----------------
 @st.cache_data
 def load_data():
     movies = pd.read_csv("movies.csv")
@@ -84,17 +84,20 @@ def load_data():
 
 movies, cosine_sim = load_data()
 
+# Detect correct ID column automatically
+ID_COL = "movie_id" if "movie_id" in movies.columns else "id"
+
 # ---------------- RECOMMENDATION FUNCTION ----------------
 def get_recommendations(title):
     idx = movies[movies["title"] == title].index[0]
     sim_scores = list(enumerate(cosine_sim[idx]))
     sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)[1:11]
     movie_indices = [i[0] for i in sim_scores]
-    return movies.iloc[movie_indices]
+    return movies.iloc[movie_indices].reset_index(drop=True)
 
 # ---------------- POSTER FETCH ----------------
 def fetch_poster(movie_id):
-    api_key = "7b995d3c6fd91a2284b4ad8cb390c7b8"
+    api_key = "7b995d3c6fd91a2284b4ad8cb390c7b8"  # TMDB API key
     url = f"https://api.themoviedb.org/3/movie/{movie_id}?api_key={api_key}"
     data = requests.get(url).json()
     if data.get("poster_path"):
@@ -126,7 +129,7 @@ if st.button("🍿 Recommend Movies"):
         for col, j in zip(cols, range(i, i + 5)):
             if j < len(recommendations):
                 movie_title = recommendations.iloc[j]["title"]
-                movie_id = recommendations.iloc[j]["movie_id"]
+                movie_id = recommendations.iloc[j][ID_COL]
                 poster_url = fetch_poster(movie_id)
 
                 with col:
